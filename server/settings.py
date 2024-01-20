@@ -11,18 +11,21 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
 from pathlib import Path
+import environ
+BASE_DIR = Path(__file__).resolve().parent.parent
+env = environ.Env()
+environ.Env.read_env()
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-+o!vu5p#@dyum3e7isk^^#g$k5o62ndhgf6cdgs42rqfz-4aeh'
-
-# SECURITY WARNING: don't run with debug turned on in production!
+SECRET_KEY = env('SECRET_KEY')
 DEBUG = True
 
 ALLOWED_HOSTS = []
@@ -75,15 +78,12 @@ WSGI_APPLICATION = 'server.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
-COGNITO_AWS_REGION = 'your-cognito-region'
-COGNITO_USER_POOL_ID = 'your-user-pool-id'
-COGNITO_APP_CLIENT_ID = 'your-app-client-id'
+COGNITO_AWS_REGION = env('COGNITO_AWS_REGION')
+COGNITO_USER_POOL_ID = env('COGNITO_USER_POOL_ID')
+COGNITO_APP_CLIENT_ID = env('COGNITO_APP_CLIENT_ID')
 
-AUTHENTICATION_CLASSES = [
-    'django_cognito_jwt.backends.CognitoJWTAuthentication',
-    'rest_framework.authentication.SessionAuthentication',
-    'rest_framework.authentication.BasicAuthentication',
-]
+AUTH_USER_MODEL = 'core.User'
+
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
