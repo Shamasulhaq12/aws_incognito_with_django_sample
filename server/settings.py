@@ -75,6 +75,22 @@ WSGI_APPLICATION = 'server.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
+COGNITO_AWS_REGION = 'your-cognito-region'
+COGNITO_USER_POOL_ID = 'your-user-pool-id'
+COGNITO_APP_CLIENT_ID = 'your-app-client-id'
+
+AUTHENTICATION_CLASSES = [
+    'django_cognito_jwt.backends.CognitoJWTAuthentication',
+    'rest_framework.authentication.SessionAuthentication',
+    'rest_framework.authentication.BasicAuthentication',
+]
+
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+}
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
