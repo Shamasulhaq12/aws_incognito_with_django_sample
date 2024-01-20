@@ -1,8 +1,8 @@
 from django.urls import path
-from .views import UserRegistrationCognitoView, LoginCognitoView
+from .views import UserRegistrationCognitoView, UserLoginCognitoView
 
 
 urlpatterns = [
     path('register/', UserRegistrationCognitoView.as_view()),
-    path('login/', LoginCognitoView.as_view()),
+    path('login/', UserLoginCognitoView.as_view()),
 ]
