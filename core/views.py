@@ -60,14 +60,22 @@ class UserLoginCognitoView(APIView):
 
         if not email or not password:
             return JsonResponse({'error': 'username and password are required'}, status=400)
-
+        client_id = settings.COGNITO_APP_CLIENT_ID
+        client_secret = settings.COGNITO_APP_CLIENT_SECRET  # Replace with your actual client secret
+        message = email + client_id
+        secret_hash = hmac.new(str.encode(client_secret), msg=str.encode(message), digestmod=hashlib.sha256).digest()
+        secret_hash = base64.b64encode(secret_hash).decode()
         # Authenticate user in AWS Cognito
         try:
             cognito_client = boto3.client('cognito-idp', region_name=settings.COGNITO_AWS_REGION)
             response = cognito_client.initiate_auth(
                 AuthFlow='USER_PASSWORD_AUTH',
-                AuthParameters={'USERNAME': email, 'PASSWORD': password},
-                ClientId=settings.COGNITO_APP_CLIENT_ID,
+                AuthParameters={
+                    'USERNAME': email,
+                    'PASSWORD': password,
+                    'SECRET_HASH': secret_hash,  # Include SECRET_HASH in the request
+                },
+                ClientId=client_id,
             )
             id_token = response['AuthenticationResult']['IdToken']
         except ClientError as e:
