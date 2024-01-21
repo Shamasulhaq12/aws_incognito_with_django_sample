@@ -10,6 +10,7 @@ from botocore.exceptions import ClientError
 from core.utils import verify_and_decode_jwt
 import hmac
 import hashlib
+from django.shortcuts import get_object_or_404
 import base64
 
 
@@ -43,12 +44,43 @@ class UserRegistrationCognitoView(APIView):
                 ],
                 SecretHash=secret_hash,
             )
+            User.objects.get_or_create(email=email,defaults={'password':password})
+            return JsonResponse({'message': 'User registered successfully. Check your email for verification code.'},
+                                status=201)
         except ClientError as e:
-            return Response({'error': f'Error registering user in Cognito: {e.response["Error"]["Message"]}'}, status=400)
-        # Create user in Django
+            return JsonResponse({'error': f'Error registering user in Cognito: {e.response["Error"]["Message"]}'},status=400)
 
-        user = User.objects.create_user(email=email, password=password)
-        return Response({'success': f'User {user.email} created successfully'}, status=201)
+
+class UserVerificationCognitoView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        email = request.data.get('email')
+        verification_code = request.data.get('verification_code')
+
+        if not email or not verification_code:
+            return JsonResponse({'error': 'email and verification_code are required'}, status=400)
+        client_id = settings.COGNITO_APP_CLIENT_ID
+        client_secret = settings.COGNITO_APP_CLIENT_SECRET  # Replace with your actual client secret
+        message = email + client_id
+        secret_hash = hmac.new(str.encode(client_secret), msg=str.encode(message), digestmod=hashlib.sha256).digest()
+        secret_hash = base64.b64encode(secret_hash).decode()
+        # Verify user in AWS Cognito
+        try:
+            cognito_client = boto3.client('cognito-idp', region_name=settings.COGNITO_AWS_REGION)
+            cognito_client.confirm_sign_up(
+                ClientId=client_id,
+                Username=email,
+                ConfirmationCode=verification_code,
+                SecretHash=secret_hash,
+            )
+            user = get_object_or_404(User,email=email)
+            user.is_active=True
+            user.save()
+            return JsonResponse({'message': 'User verified successfully'}, status=200)
+        except ClientError as e:
+            return JsonResponse({'error': f'Error verifying user in Cognito: {e.response["Error"]["Message"]}'},
+                                status=400)
 
 
 class UserLoginCognitoView(APIView):
