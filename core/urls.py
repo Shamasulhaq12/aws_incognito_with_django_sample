@@ -1,7 +1,12 @@
 from django.urls import path
-from .views import UserRegistrationCognitoView, UserLoginCognitoView, UserVerificationCognitoView, UserResendVerificationCognitoView, UserForgotPasswordCognitoView, UserConfirmForgotPasswordCognitoView,UserResendVerificationCognitoView
-
-
+from .views import (
+    UserRegistrationCognitoView,
+    UserResendVerificationCognitoView,
+    UserForgotPasswordCognitoView,
+    UserConfirmForgotPasswordCognitoView,
+    UserLoginCognitoView,
+    UserVerificationCognitoView,
+)
 
 urlpatterns = [
     path('register/', UserRegistrationCognitoView.as_view()),
