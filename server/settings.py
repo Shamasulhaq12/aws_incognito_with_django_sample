@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'django_cognito_jwt',
     'core.apps.CoreConfig',
 ]
 
@@ -85,6 +86,11 @@ COGNITO_APP_CLIENT_SECRET = env('COGNITO_APP_CLIENT_SECRET')
 
 AUTH_USER_MODEL = 'core.User'
 
+AUTHENTICATION_CLASSES = [
+    'django_cognito_jwt.backends.CognitoJWTAuthentication',
+    'rest_framework.authentication.SessionAuthentication',
+    'rest_framework.authentication.BasicAuthentication',
+]
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
