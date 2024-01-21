@@ -82,6 +82,87 @@ class UserVerificationCognitoView(APIView):
             return JsonResponse({'error': f'Error verifying user in Cognito: {e.response["Error"]["Message"]}'},
                                 status=400)
 
+class UserResendVerificationCognitoView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        email = request.data.get('email')
+
+        if not email:
+            return JsonResponse({'error': 'email is required'}, status=400)
+        client_id = settings.COGNITO_APP_CLIENT_ID
+        client_secret = settings.COGNITO_APP_CLIENT_SECRET  # Replace with your actual client secret
+        message = email + client_id
+        secret_hash = hmac.new(str.encode(client_secret), msg=str.encode(message), digestmod=hashlib.sha256).digest()
+        secret_hash = base64.b64encode(secret_hash).decode()
+        # Resend verification code in AWS Cognito
+        try:
+            cognito_client = boto3.client('cognito-idp', region_name=settings.COGNITO_AWS_REGION)
+            cognito_client.resend_confirmation_code(
+                ClientId=client_id,
+                Username=email,
+                SecretHash=secret_hash,
+            )
+            return JsonResponse({'message': 'Verification code resent successfully'}, status=200)
+        except ClientError as e:
+            return JsonResponse({'error': f'Error resending verification code in Cognito: {e.response["Error"]["Message"]}'},
+                                status=400)
+
+class UserForgotPasswordCognitoView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        email = request.data.get('email')
+
+        if not email:
+            return JsonResponse({'error': 'email is required'}, status=400)
+        client_id = settings.COGNITO_APP_CLIENT_ID
+        client_secret = settings.COGNITO_APP_CLIENT_SECRET  # Replace with your actual client secret
+        message = email + client_id
+        secret_hash = hmac.new(str.encode(client_secret), msg=str.encode(message), digestmod=hashlib.sha256).digest()
+        secret_hash = base64.b64encode(secret_hash).decode()
+        # Initiate forgot password flow in AWS Cognito
+        try:
+            cognito_client = boto3.client('cognito-idp', region_name=settings.COGNITO_AWS_REGION)
+            cognito_client.forgot_password(
+                ClientId=client_id,
+                Username=email,
+                SecretHash=secret_hash,
+            )
+            return JsonResponse({'message': 'Password reset code sent successfully'}, status=200)
+        except ClientError as e:
+            return JsonResponse({'error': f'Error sending password reset code in Cognito: {e.response["Error"]["Message"]}'},
+                                status=400)
+
+class UserConfirmForgotPasswordCognitoView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        email = request.data.get('email')
+        verification_code = request.data.get('verification_code')
+        new_password = request.data.get('new_password')
+
+        if not email or not verification_code or not new_password:
+            return JsonResponse({'error': 'email, verification_code, and new_password are required'}, status=400)
+        client_id = settings.COGNITO_APP_CLIENT_ID
+        client_secret = settings.COGNITO_APP_CLIENT_SECRET  # Replace with your actual client secret
+        message = email + client_id
+        secret_hash = hmac.new(str.encode(client_secret), msg=str.encode(message), digestmod=hashlib.sha256).digest()
+        secret_hash = base64.b64encode(secret_hash).decode()
+        # Confirm forgot password flow in AWS Cognito
+        try:
+            cognito_client = boto3.client('cognito-idp', region_name=settings.COGNITO_AWS_REGION)
+            cognito_client.confirm_forgot_password(
+                ClientId=client_id,
+                Username=email,
+                ConfirmationCode=verification_code,
+                Password=new_password,
+                SecretHash=secret_hash,
+            )
+            return JsonResponse({'message': 'Password reset successfully'}, status=200)
+        except ClientError as e:
+            return JsonResponse({'error': f'Error resetting password in Cognito: {e.response["Error"]["Message"]}'},
+                                status=400)
 
 class UserLoginCognitoView(APIView):
     permission_classes = [AllowAny]
