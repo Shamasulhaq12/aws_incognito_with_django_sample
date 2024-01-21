@@ -8,6 +8,9 @@ import boto3
 from django.conf import settings
 from botocore.exceptions import ClientError
 from core.utils import verify_and_decode_jwt
+import hmac
+import hashlib
+import base64
 
 
 User = get_user_model()
@@ -21,6 +24,11 @@ class UserRegistrationCognitoView(APIView):
 
         if not password or not email:
             return JsonResponse({'error': 'username, password, and email are required'}, status=400)
+        client_id = settings.COGNITO_APP_CLIENT_ID
+        client_secret = settings.COGNITO_APP_CLIENT_SECRET  # Replace with your actual client secret
+        message = email + client_id
+        secret_hash = hmac.new(str.encode(client_secret), msg=str.encode(message), digestmod=hashlib.sha256).digest()
+        secret_hash = base64.b64encode(secret_hash).decode()
 
         # Register user in AWS Cognito
         try:
@@ -33,6 +41,7 @@ class UserRegistrationCognitoView(APIView):
                     {'Name': 'email', 'Value': email},
                     # Add additional user attributes as needed
                 ],
+                SecretHash=secret_hash,
             )
         except ClientError as e:
             return Response({'error': f'Error registering user in Cognito: {e.response["Error"]["Message"]}'}, status=400)
